@@ -2,13 +2,18 @@ package com.example.contacts.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,11 +44,40 @@ import com.example.contacts.contact.ContactsViewModel
 fun ContactFormScreen(
     viewModel: ContactsViewModel,
     contactId: String?,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onDeleteContact: (() -> Unit)? = null
 ) {
     val isEditing = contactId != null
-    val existingContact: Contact? = remember(contactId) {
-        contactId?.let { viewModel.getContactById(it) }
+    val existingContact: Contact? = contactId?.let { viewModel.getContactById(it) }
+
+    if (isEditing && existingContact == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Editar contacto") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("El contacto no está disponible")
+            }
+        }
+        return
     }
 
     var name by remember { mutableStateOf(existingContact?.name ?: "") }
@@ -49,6 +85,9 @@ fun ContactFormScreen(
     var email by remember { mutableStateOf(existingContact?.email ?: "") }
     var phoneNumber by remember { mutableStateOf(existingContact?.phoneNumber ?: "") }
     var nameError by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    val deleteAction = onDeleteContact ?: onNavigateBack
 
     fun save() {
         if (name.isBlank()) {
@@ -74,6 +113,35 @@ fun ContactFormScreen(
         }
         onNavigateBack()
     }
+
+    if (showDeleteConfirmation  && existingContact != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Eliminar contacto") },
+            text = {
+                Text("Esta acción no se puede deshacer. ¿continuar?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteContact(existingContact)
+                        deleteAction()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Continuar")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 
     Scaffold(
         topBar = {
@@ -159,6 +227,19 @@ fun ContactFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
+            if (isEditing) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { showDeleteConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Eliminar contacto")
+                }
+            }
         }
     }
 }

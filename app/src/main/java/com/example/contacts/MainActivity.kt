@@ -58,8 +58,6 @@ fun ContactsApp() {
     ) {
         when (currentDestination) {
             AppDestinations.HOME -> ContactsListRoute()
-            AppDestinations.FAVORITES -> Text("Pantalla de Favoritos")
-            AppDestinations.PROFILE -> Text("Pantalla de Perfil")
         }
     }
 }
@@ -68,7 +66,5 @@ enum class AppDestinations(
     val label: String,
     val icon: Int,
 ) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
-    PROFILE("Profile", R.drawable.ic_account_box),
+    HOME("Contactos", R.drawable.ic_home)
 }

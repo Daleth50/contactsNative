@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.contacts.contact.ContactsViewModel
+import com.example.contacts.ui.ContactDetailScreen
 import com.example.contacts.ui.ContactFormScreen
 import com.example.contacts.ui.ContactListScreen
 import com.example.contacts.ui.theme.ContactsTheme
@@ -39,8 +40,22 @@ fun ContactsListRoute(contactsViewModel: ContactsViewModel = viewModel()) {
             ContactListScreen(
                 viewModel = contactsViewModel,
                 onAddContact = { navController.navigate("form/new") },
-                onEditContact = { id -> navController.navigate("form/$id") }
+                onContactClick = { id -> navController.navigate("detail/$id") }
             )
+        }
+        composable(
+            route = "detail/{contactId}",
+            arguments = listOf(navArgument("contactId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val contactId = backStackEntry.arguments?.getString("contactId")
+            if (contactId != null) {
+                ContactDetailScreen(
+                    viewModel = contactsViewModel,
+                    contactId = contactId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditContact = { id -> navController.navigate("form/$id") }
+                )
+            }
         }
         composable(
             route = "form/{contactId}",
@@ -50,7 +65,15 @@ fun ContactsListRoute(contactsViewModel: ContactsViewModel = viewModel()) {
             ContactFormScreen(
                 viewModel = contactsViewModel,
                 contactId = if (contactId == "new") null else contactId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onDeleteContact = {
+                    navController.navigate("list") {
+                        popUpTo("list") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
     }
